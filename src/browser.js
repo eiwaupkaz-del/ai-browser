@@ -36,6 +36,7 @@ function labelElements(max) {
       el.getAttribute('title') || el.getAttribute('alt') || el.getAttribute('name') || '').replace(/\s+/g, ' ').trim().slice(0, 80);
     const item = { id: n, tag, label };
     if (type) item.type = type;
+    if (el.id) item.domId = el.id;
     if (tag === 'a') item.href = el.href;
     out.push(item);
     if (out.length >= max) break;

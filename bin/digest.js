@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // 定期チェック: 決めたサイトを順に開き、前回から増えたリンク（新着）を自宅の AI にまとめさせる
-//   npm run digest
+//   npm run digest                 … 見てまとめる（config に post があれば投稿も）
+//   npm run digest -- --no-post    … 投稿しない
+//   npm run digest -- --dry-run-post … 投稿は送信の直前まで（送らない）
 // 見るサイトは config/digest.json（なければ見本 config/digest.example.json）。
 // まとめは data/reports/digest-日付.md に保存。操作はすべてふつうの履歴にも残る。
 import fs from 'node:fs';
@@ -11,6 +13,7 @@ import { Policy } from '../src/policy.js';
 import { History } from '../src/history.js';
 import { AIBrowser } from '../src/browser.js';
 import { loadLocalConfig } from '../src/ollama-agent.js';
+import { postToCp2pRoom, toPlainText } from '../src/posters/cp2p.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const cfgFile = fs.existsSync(path.join(ROOT, 'config', 'digest.json'))
@@ -81,17 +84,37 @@ try {
   await browser.close();
 }
 
-fs.writeFileSync(STATE_FILE, JSON.stringify(state));
 const now = new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' });
 const report = `# ${cfg.title}（${today} ${now}）\n\nまとめ: 自宅の AI（${llm.model}）。元のページを必ず確かめてください。\n\n${sections.join('\n\n')}\n`;
+
+// まとめをどこかへ投稿する（config の post。いまは CP2P のルームだけ）
+let posted = '';
+if (cfg.post && cfg.post.type === 'cp2p' && !process.argv.includes('--no-post')) {
+  const poster = new AIBrowser({ policy: new Policy(), history, profile: cfg.post.profile || 'cp2p' });
+  try {
+    const r = await postToCp2pRoom(poster, {
+      url: cfg.post.url, room: cfg.post.room, dryRun: process.argv.includes('--dry-run-post'),
+      subject: `🏛 ${cfg.title}（${today.slice(5).replace('-', '/')} ${now}）`, body: toPlainText(report),
+    });
+    posted = r.sent ? `CP2P「${cfg.post.room}」に投稿しました` : `CP2P「${cfg.post.room}」への投稿を試しました（送らず）`;
+  } catch (e) {
+    posted = `CP2P への投稿に失敗: ${e.message}`;
+  } finally {
+    await poster.close();
+  }
+  history.write({ kind: 'note', message: posted, room: cfg.post.room });
+}
+
+fs.writeFileSync(STATE_FILE, JSON.stringify(state));
 const out = path.join(REPORT_DIR, `digest-${today}.md`);
 fs.writeFileSync(out, report);
 history.write({ kind: 'session', event: 'end', message: '定期チェックの終わり', report: out, totalNew });
 console.log(report);
 console.error(`保存: ${out}`);
+if (posted) console.error(posted);
 
 if (cfg.notify !== false && process.platform === 'darwin') {
   try {
-    execFileSync('osascript', ['-e', `display notification "新着 ${totalNew} 件。${path.basename(out)}" with title "${cfg.title}"`]);
+    execFileSync('osascript', ['-e', `display notification "新着 ${totalNew} 件。${posted || path.basename(out)}" with title "${cfg.title}"`]);
   } catch {}
 }

@@ -21,5 +21,12 @@ const ctx = await chromium.launchPersistentContext(profileDir(), { headless: fal
 const page = ctx.pages()[0] || await ctx.newPage();
 await page.goto(url);
 console.error('ログインが終わったら、窓を閉じてください。');
-await new Promise((r) => ctx.on('close', r));
+// Mac では窓を閉じてもブラウザーが終わらないので、最後のタブが閉じたら自分で終わらせる（ここでログインの状態が保存される）
+await new Promise((resolve) => {
+  ctx.on('close', resolve);
+  const watch = (p) => p.on('close', () => { if (ctx.pages().length === 0) ctx.close().catch(() => {}); });
+  ctx.pages().forEach(watch);
+  ctx.on('page', watch);
+  process.on('SIGINT', () => ctx.close().catch(() => {}));
+});
 history.write({ kind: 'session', event: 'end', message: 'ログインの窓を閉じた' });

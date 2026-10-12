@@ -2,13 +2,35 @@
   "_説明": "定期チェック（npm run digest）で見るサイト。前回から増えたリンクを「新着」として、自宅の AI がまとめる。",
   "title": "内閣府・国会・大阪府・大阪市の夕方まとめ",
   "sites": [
-    { "name": "内閣府", "url": "https://www.cao.go.jp/" },
-    { "name": "衆議院", "url": "https://www.shugiin.go.jp/" },
-    { "name": "参議院", "url": "https://www.sangiin.go.jp/" },
-    { "name": "大阪府", "url": "https://www.pref.osaka.lg.jp/" },
-    { "name": "大阪市", "url": "https://www.city.osaka.lg.jp/" }
+    {
+      "name": "内閣府",
+      "url": "https://www.cao.go.jp/"
+    },
+    {
+      "name": "衆議院",
+      "url": "https://www.shugiin.go.jp/"
+    },
+    {
+      "name": "参議院",
+      "url": "https://www.sangiin.go.jp/"
+    },
+    {
+      "name": "大阪府",
+      "url": "https://www.pref.osaka.lg.jp/"
+    },
+    {
+      "name": "大阪市",
+      "url": "https://www.city.osaka.lg.jp/"
+    }
   ],
   "minLinkText": 12,
   "pageTextChars": 2500,
-  "notify": true
+  "notify": true,
+  "_post説明": "まとめを投稿したいときは、下の _post例 の名前を post に変えて、ルーム名を書く。type は今は cp2p だけ。profile はログインした入れ物の名前（AIB_PROFILE=cp2p npm run login -- https://cp2p.eiwa-up.jp/）。",
+  "_post例": {
+    "type": "cp2p",
+    "url": "https://cp2p.eiwa-up.jp/",
+    "room": "ルーム名",
+    "profile": "cp2p"
+  }
 }
