@@ -2,6 +2,7 @@ node_modules/
 # 各自の設定（許可リストや Ollama の宛先）は公開しない
 config/policy.json
 config/local.json
+config/digest.json
 # 履歴・ブラウザーのログイン情報は絶対に公開しない
 data/
 .env

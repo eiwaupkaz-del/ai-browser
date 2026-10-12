@@ -76,6 +76,22 @@ claude mcp add ai-browser -- node /path/to/ai-browser/src/mcp-server.js
 npm run ollama -- "○○市のお知らせのページを開いて、今週の新しいお知らせを 3 つまとめて"
 ```
 
+### 定期チェック（決まった時刻に見てまとめる）
+
+`config/digest.json`（なければ見本 `config/digest.example.json`）に書いたサイトを順に開きます。前回から増えたリンクを「新着」として、自宅の AI がまとめます。まとめは `data/reports/digest-日付.md` に保存され、Mac の通知も出ます。
+
+```bash
+npm run digest
+```
+
+毎日 19:00 に動かすときは、次のように入れます（macOS の launchd を使います）。
+
+```bash
+bash scripts/schedule-mac.sh 19:00
+```
+
+やめるときは `bash scripts/schedule-mac.sh off` です。
+
 ### 道具の一覧
 
 `open_url`・`search_web`・`read_page`・`list_elements`・`click`・`type_text`・`select_option`・`press_key`・`scroll`・`go_back`・`screenshot`・`list_tabs`・`switch_tab`・`write_permission`・`recent_history`
