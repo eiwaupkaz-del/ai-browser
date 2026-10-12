@@ -29,22 +29,16 @@ AI がウェブを見るための専用ブラウザーです。Playwright（Chro
 Node.js 20 以上が必要です。
 
 ```bash
-git clone https://github.com/eiwaupkaz-del/ai-browser.git
+git clone https://github.com/eiwaupkaz-del/ai-browser.git ~/ai-browser
 ```
 
 ```bash
-cd ai-browser && npm install && npx playwright install chromium
+bash ~/ai-browser/scripts/install-mac.sh http://<Ollama の宛先>:11434
 ```
 
-設定ファイルを見本から作ります（どちらも Git には入りません）。
+`install-mac.sh` は、部品と Chromium を入れ、設定ファイルを見本から作り（`config/policy.json`・`config/local.json`。どちらも Git には入りません）、テストと Ollama への接続を確かめます。何度実行しても大丈夫で、2 回目からは更新になります。
 
-```bash
-cp config/policy.example.json config/policy.json
-```
-
-```bash
-cp config/local.example.json config/local.json
-```
+> **iCloud に注意**：デスクトップや書類のフォルダーを iCloud で同期している Mac では、そこに置かないでください。履歴とブラウザーのログイン情報（`data/`）が他の Mac と混ざります。`~/ai-browser` のように、同期されない場所に置きます。
 
 ### 書き込み許可リスト
 
