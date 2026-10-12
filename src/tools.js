@@ -26,8 +26,8 @@ export const TOOLS = [
   {
     name: 'list_elements',
     description: '今のページのリンク・ボタン・入力欄に番号をつけて一覧にする。click や type_text の前に使う。',
-    inputSchema: { type: 'object', properties: { max: { type: 'integer', description: '最大の数（既定 150）' } } },
-    run: (b, a) => b.listElements({ max: a.max || 150 }),
+    inputSchema: { type: 'object', properties: { max: { type: 'integer', description: '最大の数（既定 150）' }, query: { type: 'string', description: 'この言葉を含む部品だけ（部品が多いページで使う）' } } },
+    run: (b, a) => b.listElements({ max: a.max || 150, query: a.query }),
   },
   {
     name: 'click',

@@ -10,8 +10,8 @@ async function waitFor(page, fn, arg, timeout = 30000) {
 
 const visible = (id) => { const el = document.getElementById(id); return !!el && el.getBoundingClientRect().width > 0; };
 
-async function findElement(browser, pred, what) {
-  const { elements } = await browser.listElements({ max: 400 });
+async function findElement(browser, pred, what, query) {
+  const { elements } = await browser.listElements({ max: 400, query });
   const el = elements.find(pred);
   if (!el) throw new Error(`CP2P の画面に「${what}」が見つかりません`);
   return el.id;
@@ -54,18 +54,18 @@ export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/'
   await page.waitForTimeout(3000); // つながるのを待つ
 
   // 📝 長文の窓に件名と本文を入れる
-  must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgBtn', '📝 長文ボタン')));
+  must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgBtn', '📝 長文ボタン', 'longMsgBtn')));
   await waitFor(page, visible, 'longMsgInput', 10000);
-  if (subject) must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgSubject', '件名の欄'), subject));
-  must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgInput', '本文の欄'), body));
+  if (subject) must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgSubject', '件名の欄', 'longMsgSubject'), subject));
+  must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgInput', '本文の欄', 'longMsgInput'), body));
 
   if (dryRun) {
     const shot = await browser.screenshot();
-    must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgCloseBtn', '閉じるボタン')));
+    must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgCloseBtn', '閉じるボタン', 'longMsgCloseBtn')));
     return { sent: false, dryRun: true, room, screenshot: shot.file };
   }
 
-  must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgSendBtn', '送信ボタン')));
+  must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgSendBtn', '送信ボタン', 'longMsgSendBtn')));
   // 自分の投稿がルームの記録に入るのを確かめる
   const mark = (subject || body).slice(0, 20);
   await waitFor(page, ([r, m]) => (localStorage.getItem('p2p_room_history_' + r) || '').includes(m) ||

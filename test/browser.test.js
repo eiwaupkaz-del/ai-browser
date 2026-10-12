@@ -70,6 +70,14 @@ test('許可リスト外: 閲覧はできる・入力と送信は断る・通信
   assert.equal(posts.length, 0);
 });
 
+test('list_elements の query で絞り込める', async () => {
+  await callTool(b, 'open_url', { url: `${base}/open/form` });
+  const r = await callTool(b, 'list_elements', { query: '検索' });
+  assert.ok(r.elements.length >= 1 && r.elements.every((e) => /検索/.test(e.label)));
+  const all = await callTool(b, 'list_elements', {});
+  assert.ok(all.elements.some((e) => e.id === r.elements[0].id && e.label === r.elements[0].label));
+});
+
 test('許可リスト外でも検索欄は使える（GET の検索）', async () => {
   await callTool(b, 'open_url', { url: `${base}/open/form` });
   const e = await ids();

@@ -19,7 +19,8 @@ export function profileDir(name = process.env.AIB_PROFILE || 'main') {
 }
 
 // ページの中で動かす: 押せる・入れられる部品に番号をつけて一覧を返す
-function labelElements(max) {
+function labelElements({ max, query }) {
+  const q = (query || '').toLowerCase();
   const sel = 'a[href], button, input:not([type=hidden]), textarea, select, [role=button], [role=link], [role=searchbox], [role=textbox], [contenteditable=""], [contenteditable=true]';
   document.querySelectorAll('[data-aib-id]').forEach((e) => e.removeAttribute('data-aib-id'));
   const out = [];
@@ -34,6 +35,8 @@ function labelElements(max) {
     const type = (el.getAttribute('type') || '').toLowerCase();
     const label = (el.getAttribute('aria-label') || el.innerText || el.value || el.getAttribute('placeholder') ||
       el.getAttribute('title') || el.getAttribute('alt') || el.getAttribute('name') || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    // query があれば、文字か HTML の id にその言葉を含むものだけ（番号は全体の通し番号のまま）
+    if (q && !label.toLowerCase().includes(q) && !(el.id || '').toLowerCase().includes(q)) continue;
     const item = { id: n, tag, label };
     if (type) item.type = type;
     if (el.id) item.domId = el.id;
@@ -254,9 +257,9 @@ export class AIBrowser {
     });
   }
 
-  listElements({ max = 150 } = {}) {
-    return this.run('list_elements', { max }, async () => {
-      const items = await this.page.evaluate(labelElements, Math.min(max, 400));
+  listElements({ max = 150, query } = {}) {
+    return this.run('list_elements', query ? { max, query } : { max }, async () => {
+      const items = await this.page.evaluate(labelElements, { max: Math.min(max, 400), query });
       return { url: this.page.url(), writeAllowed: this.writeAllowedHere().ok, elements: items, summary: `${items.length} 個` };
     });
   }
