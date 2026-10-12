@@ -1,0 +1,7 @@
+{
+  "ollamaUrl": "http://localhost:11434",
+  "model": "qwen3:14b",
+  "maxSteps": 15,
+  "numCtx": 16384,
+  "toolResultChars": 5000
+}

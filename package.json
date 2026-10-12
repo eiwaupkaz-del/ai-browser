@@ -1,0 +1,25 @@
+{
+  "name": "ai-browser",
+  "version": "0.1.0",
+  "description": "AI 専用ブラウザー（Playwright + MCP）。閲覧は自由・書き込みは許可リストだけ・すべて履歴に残す",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "ai-browser-mcp": "src/mcp-server.js"
+  },
+  "scripts": {
+    "mcp": "node src/mcp-server.js",
+    "ollama": "node src/ollama-agent.js",
+    "history": "node bin/history.js",
+    "login": "node bin/login.js",
+    "test": "node --test --test-concurrency=1 test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "playwright": "^1.64.0",
+    "zod": "^4.6.6"
+  }
+}

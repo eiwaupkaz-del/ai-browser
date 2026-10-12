@@ -1,0 +1,21 @@
+{
+  "_説明": "閲覧はどのサイトでも自由。書き込み・送信（文字の入力、POST などの送信の通信、WebSocket）は writeAllowlist に合うページだけ。pattern の * は「何でも」。https://example.com/* のように書く。",
+  "writeAllowlist": [
+    {
+      "pattern": "https://example.com/*",
+      "note": "動作確認用の見本。本番では消して、使うサイトだけを書く"
+    }
+  ],
+  "blockedHosts": [
+    "localhost",
+    "127.0.0.1",
+    "[::1]",
+    "0.0.0.0"
+  ],
+  "_blockedHosts説明": "AI が自宅の中の機械（ルーターの設定画面など）を開かないように止める宛先。自宅ネットワーク（192.168.* / 10.* / 100.64-127.*）も自動で止める。",
+  "blockPrivateNetwork": true,
+  "allowSearchBoxEverywhere": true,
+  "_allowSearchBoxEverywhere説明": "true なら、検索欄（type=search や role=searchbox）だけはどのサイトでも文字を入れてよい。送信の通信（POST など）は許可リスト以外では止まったまま。",
+  "screenshotOnWrite": true,
+  "maxReadChars": 6000
+}
