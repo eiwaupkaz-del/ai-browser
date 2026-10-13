@@ -7,7 +7,7 @@ export async function fetchJson(url, { method = 'GET', headers = {}, body, fetch
   const text = await res.text();
   if (!res.ok) {
     const hint = res.status === 401 || res.status === 403 ? '（鍵が違うか、権限が足りません）' : '';
-    throw new Error(`${new URL(url).host} の返事がエラー ${res.status}${hint}: ${text.slice(0, 200)}`);
+    throw new Error(`${new URL(url).host} の返事がエラー ${res.status}${hint}: ${text.replace(/\s+/g, ' ').slice(0, 300)}`);
   }
   return text ? JSON.parse(text) : {};
 }
