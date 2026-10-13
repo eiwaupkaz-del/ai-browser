@@ -34,7 +34,13 @@ export default {
     const notes = [];
     try {
       const bal = await fetchJson(`${BASE}/v1/billing/teams/${team}/prepaid/balance`, { headers, fetchImpl });
-      if (bal.total && bal.total.val != null) notes.push({ kind: 'balance', label: '前払いの残高', value: Number(bal.total.val) / divisor });
+      // total.val は「セント」で、入金はマイナスで記録される（2026-10 に管理画面の数字と見比べて確かめた）
+      if (bal.total && bal.total.val != null) {
+        const paid = -Number(bal.total.val) / 100;
+        const used = records.reduce((a, x) => a + x.costUsd, 0);
+        notes.push({ kind: 'balance', label: '前払いで入金した額の合計', value: paid });
+        if (cfg.showRemaining !== false) notes.push({ kind: 'info', label: '前払いの残りの目安（入金の合計 − この期間に使った額・画面の数字が正）', value: Math.round((paid - used) * 100) / 100 });
+      }
     } catch (e) {
       notes.push({ kind: 'warn', label: '前払いの残高は取れませんでした', value: e.message });
     }

@@ -60,11 +60,11 @@ test('xAI: 日ごとの金額と前払いの残高・チーム ID がないと�
       assert.equal(body.timeUnit, 'TIME_UNIT_DAY');
       return { timeSeries: [{ group: 'grok-4', groupLabels: ['grok-4'], dataPoints: [{ timestamp: '2026-10-12T00:00:00Z', values: [1.5] }, { timestamp: '2026-10-11T00:00:00Z', values: [0] }] }], limitReached: false };
     },
-    '/prepaid/balance': { total: { val: 42 }, changes: [] },
+    '/prepaid/balance': { total: { val: -1996 }, changes: [] },
   });
   const r = await xai.collect({ from: '2026-10-11', to: '2026-10-13', secret: 'xai-mgmt-test', cfg: { teamId: 'team-1' }, fetchImpl: f });
   assert.deepEqual(r.records.map((x) => [x.date, x.model, x.costUsd]), [['2026-10-12', 'grok-4', 1.5]]);
-  assert.equal(r.notes.find((n) => n.kind === 'balance').value, 42);
+  assert.equal(r.notes.find((n) => n.kind === 'balance').value, 19.96);
   assert.match(f.calls[0].url, /\/v1\/billing\/teams\/team-1\/usage$/);
   await assert.rejects(xai.collect({ from: 'x', to: 'y', secret: 's', cfg: {}, fetchImpl: f }), /teamId/);
 });
