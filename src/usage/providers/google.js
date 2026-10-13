@@ -54,7 +54,9 @@ export default {
       WHERE service.description IN UNNEST(@services)
         AND usage_start_time >= TIMESTAMP(@from) AND usage_start_time < TIMESTAMP(@to)
       GROUP BY day, sku`;
-    const r = await fetchJson(`https://bigquery.googleapis.com/bigquery/v2/projects/${encodeURIComponent(projectId)}/queries`, {
+    let r;
+    try {
+      r = await fetchJson(`https://bigquery.googleapis.com/bigquery/v2/projects/${encodeURIComponent(projectId)}/queries`, {
       method: 'POST', headers: { authorization: `Bearer ${token}` }, fetchImpl, timeoutMs: 60000,
       body: {
         query, useLegacySql: false, timeoutMs: 50000, parameterMode: 'NAMED',
@@ -64,7 +66,14 @@ export default {
           { name: 'to', parameterType: { type: 'STRING' }, parameterValue: { value: to } },
         ],
       },
-    });
+      });
+    } catch (e) {
+      // 書き出しを始めた直後は、表がまだ無い（Google が 1 日ほどで作る）
+      if (/ 404/.test(e.message) && /Not found: Table/i.test(e.message)) {
+        return { records: [], notes: [{ kind: 'info', label: '請求データの表がまだできていません（書き出しを始めてから 1 日ほどで届きます）' }] };
+      }
+      throw e;
+    }
     if (r.jobComplete === false) throw new Error('BigQuery の集計が時間内に終わりませんでした');
     const names = (r.schema?.fields || []).map((f) => f.name);
     const records = [];

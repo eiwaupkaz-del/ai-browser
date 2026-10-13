@@ -139,4 +139,9 @@ test('Google: 専用アカウントの鍵で通行証をもらい、BigQuery の
   const out = r.records.find((x) => /output/.test(x.model));
   assert.deepEqual([inp.inputTokens, inp.costUsd, out.outputTokens, out.costUsd], [1000000, 0.3, 200000, 1.2]);
   await assert.rejects(google.collect({ from: 'a', to: 'b', secret, cfg: { table: 'bad table' }, fetchImpl: f }), /google\.table/);
+  const notYet = async (url) => url === sa.token_uri ? new Response('{"access_token":"tok"}', { status: 200 })
+    : new Response('{"error":{"code":404,"message":"Not found: Table p:billing.gcp_billing_export_v1_X was not found in location US"}}', { status: 404 });
+  const r2 = await google.collect({ from: '2026-10-12', to: '2026-10-13', secret, cfg: { table: 'p.billing.gcp_billing_export_v1_X' }, fetchImpl: notYet });
+  assert.equal(r2.records.length, 0);
+  assert.match(r2.notes[0].label, /まだできていません/);
 });
