@@ -30,7 +30,8 @@ export async function collectFromConsole({ cfg = {}, policy, history, from, to }
   try {
     const o = await b.openUrl(cfg.url || 'https://platform.claude.com/cost');
     if (o.refused) throw new Error(o.reason);
-    if (/\/login/.test(b.page.url())) {
+    await b.page.waitForTimeout(6000);
+    if (/\/login/.test(b.page.url()) || /メールで続ける|Continue with email/.test(await b.page.evaluate(() => document.body.innerText))) {
       return { records: [], notes: [{ kind: 'login', label: 'Claude Console のログインが切れています', value: `AIB_PROFILE=${cfg.profile || 'claude'} npm run login -- https://platform.claude.com/login` }] };
     }
     await b.page.getByRole('radio', { name: 'テーブル' }).first().waitFor({ timeout: 30000 });

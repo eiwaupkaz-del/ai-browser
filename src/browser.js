@@ -73,6 +73,17 @@ function readText({ maxChars, offset }) {
   return { title: document.title, total: text.length, text: text.slice(offset, offset + maxChars) };
 }
 
+// セッションのクッキー（ブラウザーを閉じると消えるもの）を、プロファイルの横のファイルに残す・戻す
+export function sessionStateFile(name = process.env.AIB_PROFILE || 'main') {
+  return profileDir(name) + '.session.json';
+}
+export async function saveSessionState(context, name) {
+  const cookies = (await context.cookies()).filter((c) => c.expires === -1);
+  const f = sessionStateFile(name);
+  fs.writeFileSync(f, JSON.stringify({ savedAt: new Date().toISOString(), cookies }), { mode: 0o600 });
+  return cookies.length;
+}
+
 export class AIBrowser {
   constructor({ policy, history, headless = process.env.AIB_HEADED !== '1', profile } = {}) {
     this.policy = policy;
@@ -103,6 +114,10 @@ export class AIBrowser {
         throw new Error('ブラウザーのプロファイルが別のところで使用中です。AIB_PROFILE で別の名前を指定してください');
       }
       throw e;
+    }
+    const sf = sessionStateFile(this.profile);
+    if (fs.existsSync(sf)) {
+      try { await this.context.addCookies(JSON.parse(fs.readFileSync(sf, 'utf8')).cookies || []); } catch {}
     }
     await this.context.route('**/*', (route) => this.onRequest(route));
     await this.context.routeWebSocket(/.*/, (ws) => this.onWebSocket(ws));
