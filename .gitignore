@@ -3,6 +3,7 @@ node_modules/
 config/policy.json
 config/local.json
 config/digest.json
+config/usage.json
 # 履歴・ブラウザーのログイン情報は絶対に公開しない
 data/
 .env

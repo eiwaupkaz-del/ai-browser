@@ -1,0 +1,16 @@
+{
+  "_説明": "AI の API 使用量の見張り（npm run usage）。鍵はここに書かず、キーチェーンに入れる（bash scripts/set-secret.sh <名前>）。使わない会社は enabled を false に。",
+  "providers": {
+    "anthropic": { "enabled": true, "_鍵": "anthropic-admin（Claude の Console → Settings → Admin keys で作る sk-ant-admin…）" },
+    "openai": { "enabled": true, "_鍵": "openai-admin（OpenAI の Settings → Admin keys。読むだけの権限で）" },
+    "xai": { "enabled": true, "teamId": "", "usdDivisor": 1, "_鍵": "xai-management（xAI Console → Settings → Management Keys。Billing を読むだけ）" },
+    "google": { "enabled": true, "url": "https://aistudio.google.com/usage", "profile": "google", "_ログイン": "AIB_PROFILE=google npm run login -- https://aistudio.google.com/" }
+  },
+  "budgetsUsd": { "_例": "anthropic: 100 のように、会社ごとの月の予算（ドル）。total は全体。書かなければ予算の知らせはしない" },
+  "alerts": { "spikeRatio": 2, "spikeMinUsd": 1, "budgetWarn": 0.8 },
+  "usdJpy": 150,
+  "refetchDays": 3,
+  "aiComment": true,
+  "notify": true,
+  "notifyAlways": false
+}

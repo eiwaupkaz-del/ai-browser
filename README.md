@@ -92,6 +92,23 @@ bash scripts/schedule-mac.sh 19:00
 
 やめるときは `bash scripts/schedule-mac.sh off` です。
 
+### AI の API 使用量の見張り（毎日）
+
+Claude（Anthropic）・OpenAI・xAI・Google（Gemini）の API の使用量を毎日集め、分析して報告します。
+
+| 会社 | 取り方 | 用意するもの |
+|---|---|---|
+| Claude | Admin API の Usage & Cost | 管理者用の鍵 `anthropic-admin` |
+| OpenAI | Usage API と Costs API | 管理者用の鍵 `openai-admin`（読むだけの権限で） |
+| xAI | Management API の billing | 管理用の鍵 `xai-management`（Billing を読むだけ）と、`config/usage.json` のチーム ID |
+| Google | AI Studio の使用量の画面を **このブラウザーで読むだけ**（画像も残す） | `AIB_PROFILE=google npm run login -- https://aistudio.google.com/` で人がログイン |
+
+- 鍵は設定ファイルに書かず、macOS のキーチェーンに入れます（画面に出ません）：`bash scripts/set-secret.sh anthropic-admin`
+- 分析（昨日の金額・前 7 日の平均との比較・今月の合計・月末の見込み・予算・初めて使われたモデル）はプログラムが計算し、自宅の AI は説明の文だけを書きます。
+- 報告は `data/reports/usage-日付.md`。気をつけることがあれば Mac の通知も出ます。
+- 鍵なしで形を試す：`npm run usage -- --demo`（見本の数字）。初回は `npm run usage -- --backfill 31` で過去の分を取ります。
+- 毎朝 10:00 に動かす：`bash scripts/schedule-mac.sh 10:00 usage`
+
 ### 道具の一覧
 
 `open_url`・`search_web`・`read_page`・`list_elements`・`click`・`type_text`・`select_option`・`press_key`・`scroll`・`go_back`・`screenshot`・`list_tabs`・`switch_tab`・`write_permission`・`recent_history`
