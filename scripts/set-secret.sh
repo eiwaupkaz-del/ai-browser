@@ -25,7 +25,11 @@ if [ "${1:-}" = "--file" ]; then
 fi
 NAME="${1:?使い方: bash scripts/set-secret.sh <名前>（anthropic-admin / openai-admin / xai-management）}"
 [[ "$NAME" =~ ^[a-z0-9-]+$ ]] || { echo "名前は英小文字・数字・- だけ" >&2; exit 1; }
-echo "「${NAME}」の鍵を貼り付けて Enter を押してください（画面には出ません）。"
-# -w を最後に置くと、security が見えない形で聞いてくれる（鍵がコマンドの文字に残らない）
-security add-generic-password -U -s "$SERVICE" -a "$NAME" -T /usr/bin/security -w
-echo "✓ ${NAME} をキーチェーンに入れました"
+# security の入力欄は 128 文字で切れる（OpenAI の Admin key などは長い）ので、自分で見えない形で読む
+read -r -s -p "「${NAME}」の鍵を貼り付けて Enter（画面には出ません）: " SECRET; echo
+read -r -s -p "確かめのため、もう一度貼り付けて Enter: " SECRET2; echo
+[ -n "$SECRET" ] || { echo "鍵が空です" >&2; exit 1; }
+[ "$SECRET" = "$SECRET2" ] || { echo "1 回目と 2 回目が違いました。もう一度やり直してください" >&2; exit 1; }
+security add-generic-password -U -s "$SERVICE" -a "$NAME" -T /usr/bin/security -w "$SECRET"
+LEN=${#SECRET}; unset SECRET SECRET2
+echo "✓ ${NAME} をキーチェーンに入れました（${LEN} 文字）"
