@@ -39,7 +39,7 @@ export default {
         const paid = -Number(bal.total.val) / 100;
         const used = records.reduce((a, x) => a + x.costUsd, 0);
         notes.push({ kind: 'balance', label: '前払いで入金した額の合計', value: paid });
-        if (cfg.showRemaining !== false) notes.push({ kind: 'info', label: '前払いの残りの目安（入金の合計 − この期間に使った額・画面の数字が正）', value: Math.round((paid - used) * 100) / 100 });
+        if (cfg.showRemaining === true) notes.push({ kind: 'info', label: '前払いの残りの目安（入金の合計 − この期間に使った額・画面の数字が正）', value: Math.round((paid - used) * 100) / 100 });
       }
     } catch (e) {
       notes.push({ kind: 'warn', label: '前払いの残高は取れませんでした', value: e.message });
