@@ -75,17 +75,20 @@ export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/'
   if (subject) must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgSubject', '件名の欄', 'longMsgSubject'), subject));
   must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgInput', '本文の欄', 'longMsgInput'), body));
   if (attach) {
+    // 添付すると長文の窓は自動で閉じ、CP2P が「送っていいですか？」の確認を出す（件名＋本文＋ファイルが 1 通になる）
     must(await browser.attachFile('#longMsgFileInput', attach));
-    await waitFor(page, visible, 'longMsgAttachChip', 10000);
-  }
-
-  if (dryRun) {
+    await waitFor(page, visible, 'fileConfirmOkBtn', 15000);
+    const shot = await browser.screenshot();
+    const btn = dryRun ? 'fileConfirmCancelBtn' : 'fileConfirmOkBtn';
+    must(await browser.click(await findElement(browser, (e) => e.domId === btn, dryRun ? '確認のキャンセル' : '確認の OK', btn)));
+    if (dryRun) return { sent: false, dryRun: true, room: target, screenshot: shot.file };
+  } else if (dryRun) {
     const shot = await browser.screenshot();
     must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgCloseBtn', '閉じるボタン', 'longMsgCloseBtn')));
     return { sent: false, dryRun: true, room: target, screenshot: shot.file };
   }
 
-  must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgSendBtn', '送信ボタン', 'longMsgSendBtn')));
+  if (!attach) must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgSendBtn', '送信ボタン', 'longMsgSendBtn')));
   // 自分の投稿がルームの記録に入るのを確かめる（添付があると少し時間がかかる）
   const mark = (subject || body).slice(0, 20);
   await waitFor(page, ([r, m]) => (localStorage.getItem('p2p_room_history_' + r) || '').includes(m) ||

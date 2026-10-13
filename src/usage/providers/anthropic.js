@@ -25,9 +25,10 @@ export default {
   label: 'Claude（Anthropic）',
   secret: 'anthropic-admin',
   // method: "console" なら、Admin key を使わず Console の画面を読む（個人の組織用）
-  browserWhen: (cfg) => cfg.method === 'console',
+  browserWhen: (cfg) => cfg.method === 'console' || cfg.method === 'manual',
   async collect({ from, to, secret, fetchImpl, cfg = {}, policy, history }) {
     if (cfg.method === 'console') return collectFromConsole({ cfg, policy, history, from, to });
+    if (cfg.method === 'manual') return { records: [], notes: [{ kind: 'info', label: '自動では取れません（Console の「コスト」の画面で確かめてください。保存済みの日の数字はグラフに入っています）' }] };
     const range = [['starting_at', `${from}T00:00:00Z`], ['ending_at', `${to}T00:00:00Z`], ['bucket_width', '1d'], ['limit', '31']];
     const usage = await pages('/v1/organizations/usage_report/messages', [...range, ['group_by[]', 'model']], secret, fetchImpl);
     const cost = await pages('/v1/organizations/cost_report', [...range.filter(([k]) => k !== 'bucket_width' && k !== 'limit'), ['group_by[]', 'description']], secret, fetchImpl);
