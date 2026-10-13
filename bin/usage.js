@@ -95,7 +95,8 @@ const labels = Object.fromEntries(enabled.map((p) => [p, PROVIDERS[p].label]));
 
 // 自宅の AI に短い説明を書いてもらう（数字は渡すだけ。新しい数字は作らせない）
 let comment = '';
-if (cfg.aiComment !== false) {
+// 1 社も数字が取れていない日は書かない（「ゼロ」と誤解されるため）
+if (cfg.aiComment !== false && a.providers.some((p) => p.hasData && !errors[p.provider])) {
   try {
     const llm = loadLocalConfig();
     const facts = { 日: a.day, 気をつけること: a.alerts.map((x) => `${labels[x.provider] || '合計'}: ${x.text}`),
