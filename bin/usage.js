@@ -136,7 +136,7 @@ if (!DEMO && cfg.post && cfg.post.type === 'cp2p' && !argv.includes('--no-post')
   const where = cfg.post.dmTo ? `${cfg.post.dmTo} さんへの DM` : `「${cfg.post.room}」`;
   try {
     const r = await postToCp2pRoom(poster, {
-      url: cfg.post.url, room: cfg.post.room, dmTo: cfg.post.dmTo, attach: chartFile || undefined,
+      url: cfg.post.url, room: cfg.post.room, dmTo: cfg.post.dmTo, attach: chartFile || undefined, relay: !!cfg.post.relay,
       dryRun: argv.includes('--dry-run-post'),
       subject: `💰 AI の API 使用量（${day.slice(5).replace('-', '/')}・昨日 $${a.total.cost.toFixed(2)}・今月 $${a.total.mtd.toFixed(2)}）`,
       body: toPlainText(report),

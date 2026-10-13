@@ -37,7 +37,8 @@ export function toPlainText(md) {
 }
 
 // room（ルーム名）か dmTo（友達の表示名・DM）のどちらかを渡す。attach は data/ の中の画像など 1 つ。
-export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/', room, dmTo, subject, body, attach, dryRun = false }) {
+// relay: true … 添付の確認で「サーバー経由でも送る（オフラインの相手にも届く・2pt）」に印を付ける
+export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/', room, dmTo, subject, body, attach, relay = false, dryRun = false }) {
   if (!room && !dmTo) throw new Error('room（ルーム名）か dmTo（DM の相手）がありません');
   must(await browser.openUrl(url));
   const page = browser.page;
@@ -78,6 +79,9 @@ export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/'
     // 添付すると長文の窓は自動で閉じ、CP2P が「送っていいですか？」の確認を出す（件名＋本文＋ファイルが 1 通になる）
     must(await browser.attachFile('#longMsgFileInput', attach));
     await waitFor(page, visible, 'fileConfirmOkBtn', 15000);
+    if (relay && await page.evaluate(visible, 'fileConfirmRelayChk') && !(await page.evaluate(() => document.getElementById('fileConfirmRelayChk').checked))) {
+      must(await browser.click(await findElement(browser, (e) => e.domId === 'fileConfirmRelayChk', 'サーバー経由の印', 'fileConfirmRelayChk')));
+    }
     const shot = await browser.screenshot();
     const btn = dryRun ? 'fileConfirmCancelBtn' : 'fileConfirmOkBtn';
     must(await browser.click(await findElement(browser, (e) => e.domId === btn, dryRun ? '確認のキャンセル' : '確認の OK', btn)));

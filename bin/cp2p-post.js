@@ -25,7 +25,7 @@ const history = new History({ client: 'cp2p-post' });
 const browser = new AIBrowser({ policy: new Policy(), history, profile: process.env.AIB_PROFILE || 'cp2p' });
 try {
   const r = await postToCp2pRoom(browser, {
-    url: opt('--url', 'https://cp2p.eiwa-up.jp/'), room, dmTo, attach, subject: opt('--subject'),
+    url: opt('--url', 'https://cp2p.eiwa-up.jp/'), room, dmTo, attach, relay: argv.includes('--relay'), subject: opt('--subject'),
     body: file && file.endsWith('.md') ? toPlainText(text) : text, dryRun: argv.includes('--dry-run'),
   });
   history.write({ kind: 'note', message: r.sent ? 'CP2P に投稿した' : 'CP2P への投稿を試した（送らず）', room: room || `DM:${dmTo}`, file });
