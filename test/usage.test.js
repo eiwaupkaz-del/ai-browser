@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import anthropic from '../src/usage/providers/anthropic.js';
 import openai from '../src/usage/providers/openai.js';
 import xai from '../src/usage/providers/xai.js';
+import google from '../src/usage/providers/google.js';
+import crypto from 'node:crypto';
 import { analyze } from '../src/usage/analyze.js';
 import { buildReport } from '../src/usage/report.js';
 import { getSecret } from '../src/usage/secrets.js';
@@ -106,4 +108,35 @@ test('鍵は環境変数でも渡せる（テストや他の OS 用）', () => {
   process.env.AIB_SECRET_TEST_KEY = 'abc';
   assert.equal(getSecret('test-key'), 'abc');
   delete process.env.AIB_SECRET_TEST_KEY;
+});
+
+test('Google: 専用アカウントの鍵で通行証をもらい、BigQuery の請求データを日ごと・項目ごとに読む', async () => {
+  const { privateKey, publicKey } = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const sa = { client_email: 'ai-browser-usage@p.iam.gserviceaccount.com', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }), project_id: 'p', token_uri: 'https://oauth2.googleapis.com/token' };
+  let assertionOk = false;
+  let query;
+  const f = async (url, init) => {
+    if (url === sa.token_uri) {
+      const jwt = new URLSearchParams(init.body.toString()).get('assertion').split('.');
+      assertionOk = crypto.verify('RSA-SHA256', Buffer.from(`${jwt[0]}.${jwt[1]}`), publicKey, Buffer.from(jwt[2], 'base64url'));
+      return new Response(JSON.stringify({ access_token: 'tok' }), { status: 200 });
+    }
+    assert.equal(init.headers.authorization, 'Bearer tok');
+    assert.match(url, /\/projects\/p\/queries$/);
+    query = JSON.parse(init.body);
+    return new Response(JSON.stringify({ jobComplete: true, schema: { fields: [{ name: 'day' }, { name: 'sku' }, { name: 'usd' }, { name: 'amount' }, { name: 'unit' }] },
+      rows: [
+        { f: [{ v: '2026-10-12' }, { v: 'Gemini 2.5 Flash input token count' }, { v: '0.30' }, { v: '1000000' }, { v: 'count' }] },
+        { f: [{ v: '2026-10-12' }, { v: 'Gemini 2.5 Flash output token count' }, { v: '1.20' }, { v: '200000' }, { v: 'count' }] },
+      ] }), { status: 200 });
+  };
+  const secret = Buffer.from(JSON.stringify(sa)).toString('base64');
+  const r = await google.collect({ from: '2026-10-12', to: '2026-10-13', secret, cfg: { table: 'p.billing.gcp_billing_export_v1_X' }, fetchImpl: f });
+  assert.ok(assertionOk, '通行証の署名が正しい');
+  assert.match(query.query, /FROM `p\.billing\.gcp_billing_export_v1_X`/);
+  assert.deepEqual(query.queryParameters[0].parameterValue.arrayValues.map((x) => x.value), ['Gemini API', 'Generative Language API']);
+  const inp = r.records.find((x) => /input/.test(x.model));
+  const out = r.records.find((x) => /output/.test(x.model));
+  assert.deepEqual([inp.inputTokens, inp.costUsd, out.outputTokens, out.costUsd], [1000000, 0.3, 200000, 1.2]);
+  await assert.rejects(google.collect({ from: 'a', to: 'b', secret, cfg: { table: 'bad table' }, fetchImpl: f }), /google\.table/);
 });

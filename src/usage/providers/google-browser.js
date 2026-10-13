@@ -1,11 +1,12 @@
-// Google（Gemini）: AI Studio の使用量の画面を ai-browser で「読むだけ」
+// Google（Gemini）の予備の方法: AI Studio の使用量の画面を ai-browser で「読むだけ」（google.js の method: "screen"）
+// ※ Google はプログラムで動かすブラウザーでのログインを止めることがあるため、ふだんは BigQuery の方法を使う
 // 正式な数字の入口が手軽でないため、画面の文字と画像を記録する（数字は参考値）。
 // 前もって AIB_PROFILE=google npm run login -- https://aistudio.google.com/ で人がログインしておく。
 import { AIBrowser } from '../../browser.js';
 
 export default {
-  name: 'google',
-  label: 'Google（Gemini）',
+  name: 'google-screen',
+  label: 'Google（Gemini・画面）',
   browser: true,
   async collect({ cfg = {}, policy, history }) {
     const url = cfg.url || 'https://aistudio.google.com/usage';

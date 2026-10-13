@@ -101,7 +101,7 @@ Claude（Anthropic）・OpenAI・xAI・Google（Gemini）の API の使用量を
 | Claude | Admin API の Usage & Cost | 管理者用の鍵 `anthropic-admin` |
 | OpenAI | Usage API と Costs API | 管理者用の鍵 `openai-admin`（読むだけの権限で） |
 | xAI | Management API の billing | 管理用の鍵 `xai-management`（Billing を読むだけ）と、`config/usage.json` のチーム ID |
-| Google | AI Studio の使用量の画面を **このブラウザーで読むだけ**（画像も残す） | `AIB_PROFILE=google npm run login -- https://aistudio.google.com/` で人がログイン |
+| Google | Google Cloud の請求データの書き出し（BigQuery）を、読むだけの専用アカウントで読む | 請求データの BigQuery への書き出しと、サービスアカウントの鍵 `google-sa`（`bash scripts/set-secret.sh --file google-sa 鍵.json`） |
 
 - 鍵は設定ファイルに書かず、macOS のキーチェーンに入れます（画面に出ません）：`bash scripts/set-secret.sh anthropic-admin`
 - 分析（昨日の金額・前 7 日の平均との比較・今月の合計・月末の見込み・予算・初めて使われたモデル）はプログラムが計算し、自宅の AI は説明の文だけを書きます。

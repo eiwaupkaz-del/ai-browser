@@ -26,7 +26,7 @@ const { addDays, utcDate } = await import('../src/usage/http.js');
 const { saveRecords, loadRecords } = await import('../src/usage/store.js');
 const { analyze } = await import('../src/usage/analyze.js');
 const { buildReport } = await import('../src/usage/report.js');
-const PROVIDERS = Object.fromEntries((await Promise.all(['anthropic', 'openai', 'xai', 'google-browser']
+const PROVIDERS = Object.fromEntries((await Promise.all(['anthropic', 'openai', 'xai', 'google']
   .map((n) => import(`../src/usage/providers/${n}.js`)))).map((m) => [m.default.name, m.default]));
 
 const cfgFile = fs.existsSync(path.join(ROOT, 'config', 'usage.json'))
@@ -43,9 +43,9 @@ history.write({ kind: 'session', event: 'start', message: 'API 使用量の見�
 
 // 見本の数字（鍵なしで形を試す用・本物ではない）
 function demoRecords(p) {
-  const base = { anthropic: 3.2, openai: 1.8, xai: 0.6 }[p];
+  const base = { anthropic: 3.2, openai: 1.8, xai: 0.6, google: 0.9 }[p];
   if (!base) return [];
-  const models = { anthropic: ['claude-opus-5-5', 'claude-haiku-5-5'], openai: ['gpt-image-1', 'gpt-4o-mini'], xai: ['grok-4'] }[p];
+  const models = { anthropic: ['claude-opus-5-5', 'claude-haiku-5-5'], openai: ['gpt-image-1', 'gpt-4o-mini'], xai: ['grok-4'], google: ['Gemini 2.5 Flash input token count', 'Gemini 2.5 Flash output token count'] }[p];
   const out = [];
   for (let i = 40; i >= 1; i--) {
     const date = addDays(day, -i + 1);
@@ -68,11 +68,12 @@ for (const p of enabled) {
   try {
     if (DEMO) {
       saveRecords(p, demoRecords(p));
-      if (prov.browser) notes[p] = [{ kind: 'screen', label: '（見本）ここに使用量の画面の画像と、画面にあった金額が入ります' }];
+      
       continue;
     }
     let secret;
-    if (!prov.browser) {
+    const usesBrowser = prov.browser || (prov.browserWhen && prov.browserWhen(pcfg));
+    if (!usesBrowser) {
       secret = getSecret(prov.secret);
       if (!secret) { errors[p] = `鍵が入っていません（bash scripts/set-secret.sh ${prov.secret}）`; continue; }
     }
