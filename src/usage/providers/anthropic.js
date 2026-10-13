@@ -2,6 +2,7 @@
 //   GET /v1/organizations/usage_report/messages … モデルごとのトークン数（日ごと）
 //   GET /v1/organizations/cost_report            … 金額（USD の「セント」が文字で来る）
 import { fetchJson, utcDate, mergeRecords, emptyRecord } from '../http.js';
+import { collectFromConsole } from './claude-console.js';
 
 const BASE = 'https://api.anthropic.com';
 
@@ -23,7 +24,10 @@ export default {
   name: 'anthropic',
   label: 'Claude（Anthropic）',
   secret: 'anthropic-admin',
-  async collect({ from, to, secret, fetchImpl }) {
+  // method: "console" なら、Admin key を使わず Console の画面を読む（個人の組織用）
+  browserWhen: (cfg) => cfg.method === 'console',
+  async collect({ from, to, secret, fetchImpl, cfg = {}, policy, history }) {
+    if (cfg.method === 'console') return collectFromConsole({ cfg, policy, history, from, to });
     const range = [['starting_at', `${from}T00:00:00Z`], ['ending_at', `${to}T00:00:00Z`], ['bucket_width', '1d'], ['limit', '31']];
     const usage = await pages('/v1/organizations/usage_report/messages', [...range, ['group_by[]', 'model']], secret, fetchImpl);
     const cost = await pages('/v1/organizations/cost_report', [...range.filter(([k]) => k !== 'bucket_width' && k !== 'limit'), ['group_by[]', 'description']], secret, fetchImpl);

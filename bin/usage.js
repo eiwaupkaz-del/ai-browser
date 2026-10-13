@@ -26,6 +26,9 @@ const { addDays, utcDate } = await import('../src/usage/http.js');
 const { saveRecords, loadRecords } = await import('../src/usage/store.js');
 const { analyze } = await import('../src/usage/analyze.js');
 const { buildReport } = await import('../src/usage/report.js');
+const { buildChartSvg, renderChartPng } = await import('../src/usage/chart.js');
+const { AIBrowser } = await import('../src/browser.js');
+const { postToCp2pRoom, toPlainText } = await import('../src/posters/cp2p.js');
 const PROVIDERS = Object.fromEntries((await Promise.all(['anthropic', 'openai', 'xai', 'google']
   .map((n) => import(`../src/usage/providers/${n}.js`)))).map((m) => [m.default.name, m.default]));
 
@@ -117,11 +120,41 @@ const outDir = path.join(ROOT, 'data', 'reports');
 fs.mkdirSync(outDir, { recursive: true });
 const out = path.join(outDir, `usage-${day}${DEMO ? '-demo' : ''}.md`);
 fs.writeFileSync(out, report);
-history.write({ kind: 'session', event: 'end', message: 'API 使用量の報告', report: out, alerts: a.alerts.length, errors: Object.keys(errors) });
+// 日ごとのグラフの画像（直近 30 日）
+let chartFile = '';
+try {
+  const svg = buildChartSvg(loadRecords({ from: addDays(day, -29), to: day }), { day, providers: enabled, labels, usdJpy: cfg.usdJpy || 150 });
+  chartFile = await renderChartPng(svg, path.join(outDir, `usage-${day}${DEMO ? '-demo' : ''}.png`));
+} catch (e) {
+  history.write({ kind: 'note', message: 'グラフの画像を作れなかった', error: e.message });
+}
+
+// 届ける（config の post。CP2P のルームか DM）
+let posted = '';
+if (!DEMO && cfg.post && cfg.post.type === 'cp2p' && !argv.includes('--no-post')) {
+  const poster = new AIBrowser({ policy, history, profile: cfg.post.profile || 'cp2p' });
+  const where = cfg.post.dmTo ? `${cfg.post.dmTo} さんへの DM` : `「${cfg.post.room}」`;
+  try {
+    const r = await postToCp2pRoom(poster, {
+      url: cfg.post.url, room: cfg.post.room, dmTo: cfg.post.dmTo, attach: chartFile || undefined,
+      dryRun: argv.includes('--dry-run-post'),
+      subject: `💰 AI の API 使用量（${day.slice(5).replace('-', '/')}・昨日 $${a.total.cost.toFixed(2)}・今月 $${a.total.mtd.toFixed(2)}）`,
+      body: toPlainText(report),
+    });
+    posted = r.sent ? `CP2P の${where}に送りました` : `CP2P の${where}への送信を試しました（送らず）`;
+  } catch (e) {
+    posted = `CP2P の${where}への送信に失敗: ${e.message}`;
+  } finally {
+    await poster.close();
+  }
+  history.write({ kind: 'note', message: posted });
+  console.error(posted);
+}
+history.write({ kind: 'session', event: 'end', message: 'API 使用量の報告', report: out, chart: chartFile, posted, alerts: a.alerts.length, errors: Object.keys(errors) });
 console.log(report);
 console.error(`保存: ${out}`);
 
-const needsAttention = a.alerts.length || Object.keys(errors).length;
+const needsAttention = a.alerts.length || Object.keys(errors).length || /失敗/.test(posted);
 if (process.platform === 'darwin' && cfg.notify !== false && (needsAttention || cfg.notifyAlways)) {
   const msg = a.alerts.length ? `気をつけること ${a.alerts.length} 件` : `取れなかった会社 ${Object.keys(errors).length} 件`;
   try { execFileSync('osascript', ['-e', `display notification "${msg}（昨日 $${a.total.cost.toFixed(2)}）" with title "AI の API 使用量${DEMO ? '（見本）' : ''}"`]); } catch {}

@@ -12,10 +12,12 @@ import { postToCp2pRoom, toPlainText } from '../src/posters/cp2p.js';
 const argv = process.argv.slice(2);
 const opt = (k, d) => { const i = argv.indexOf(k); return i >= 0 ? argv[i + 1] : d; };
 const room = opt('--room');
+const dmTo = opt('--dm');
+const attach = opt('--attach');
 const file = opt('--file');
 const text = file ? fs.readFileSync(file, 'utf8') : opt('--text');
-if (!room || !text) {
-  console.error('使い方: node bin/cp2p-post.js --room <ルーム名> (--file <ファイル> | --text <文>) [--subject <件名>] [--dry-run]');
+if ((!room && !dmTo) || !text) {
+  console.error('使い方: node bin/cp2p-post.js (--room <ルーム名> | --dm <友達の名前>) (--file <ファイル> | --text <文>) [--subject <件名>] [--attach <data/の中のファイル>] [--dry-run]');
   process.exit(1);
 }
 
@@ -23,10 +25,10 @@ const history = new History({ client: 'cp2p-post' });
 const browser = new AIBrowser({ policy: new Policy(), history, profile: process.env.AIB_PROFILE || 'cp2p' });
 try {
   const r = await postToCp2pRoom(browser, {
-    url: opt('--url', 'https://cp2p.eiwa-up.jp/'), room, subject: opt('--subject'),
+    url: opt('--url', 'https://cp2p.eiwa-up.jp/'), room, dmTo, attach, subject: opt('--subject'),
     body: file && file.endsWith('.md') ? toPlainText(text) : text, dryRun: argv.includes('--dry-run'),
   });
-  history.write({ kind: 'note', message: r.sent ? 'CP2P に投稿した' : 'CP2P への投稿を試した（送らず）', room, file });
+  history.write({ kind: 'note', message: r.sent ? 'CP2P に投稿した' : 'CP2P への投稿を試した（送らず）', room: room || `DM:${dmTo}`, file });
   console.log(JSON.stringify(r));
 } catch (e) {
   history.write({ kind: 'note', message: 'CP2P への投稿に失敗', room, error: e.message });

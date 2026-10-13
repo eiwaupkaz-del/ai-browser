@@ -26,31 +26,47 @@ function must(result) {
 export function toPlainText(md) {
   return md
     .replace(/^# .*\n+/, '')
-    .replace(/^## (.*)$/gm, '■ $1')
+    .replace(/^#{2,3} (.*)$/gm, '■ $1')
+    .replace(/^\|[-| ]+\|$/gm, '')
+    .replace(/^\| (.*) \|$/gm, (_, row) => '・' + row.split(/\s*\|\s*/).map((c) => c.replace(/\*\*/g, '').trim()).filter(Boolean).join(' ／ '))
+    .replace(/^> /gm, '')
     .replace(/^<(https?:\/\/[^>]+)>$/gm, '$1')
     .replace(/ {2}$/gm, '')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
-export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/', room, subject, body, dryRun = false }) {
-  if (!room) throw new Error('room（ルーム名）がありません');
+// room（ルーム名）か dmTo（友達の表示名・DM）のどちらかを渡す。attach は data/ の中の画像など 1 つ。
+export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/', room, dmTo, subject, body, attach, dryRun = false }) {
+  if (!room && !dmTo) throw new Error('room（ルーム名）か dmTo（DM の相手）がありません');
   must(await browser.openUrl(url));
   const page = browser.page;
   if (/\/login/.test(page.url())) throw new Error('CP2P にログインしていません。npm run login で人がログインしてください');
 
-  // ルームに入る（もう入っていればそのまま）
+  // 画面が出るのを待つ（ルームの中か、入る前の画面）
   await waitFor(page, () => !!document.getElementById('msg') && (document.getElementById('msg').getBoundingClientRect().width > 0 ||
     [...document.querySelectorAll('button')].some((b) => b.innerText.trim() === '参加' && b.getBoundingClientRect().width > 0)));
-  const inRoom = await page.evaluate(visible, 'msg');
-  if (!inRoom) {
-    const roomInput = await findElement(browser, (e) => e.tag === 'input' && (e.label === room || /room/i.test(e.domId || '')) && e.type !== 'password' && e.type !== 'checkbox', 'ルーム名の欄');
-    must(await browser.typeText(roomInput, room));
-    must(await browser.click(await findElement(browser, (e) => e.tag === 'button' && e.label === '参加', '参加ボタン')));
+
+  let target;
+  if (dmTo) {
+    // 友達の一覧から「💬 相手の名前」を押して DM を開く
+    must(await browser.click(await findElement(browser, (e) => e.domId === 'topFriendBtn', '友達ボタン', 'topFriendBtn')));
+    await page.waitForTimeout(2500);
+    must(await browser.click(await findElement(browser, (e) => e.tag === 'button' && e.label === `💬 ${dmTo}`, `友達「${dmTo}」の DM ボタン`, dmTo)));
     await waitFor(page, visible, 'msg');
+    target = await page.evaluate(() => localStorage.getItem('p2p_room'));
+    if (!/^dm__/.test(target || '')) throw new Error(`DM が開けませんでした（開いたのは「${target}」）`);
+  } else {
+    const inRoom = await page.evaluate(visible, 'msg');
+    if (!inRoom) {
+      const roomInput = await findElement(browser, (e) => e.tag === 'input' && (e.label === room || /room/i.test(e.domId || '')) && e.type !== 'password' && e.type !== 'checkbox', 'ルーム名の欄');
+      must(await browser.typeText(roomInput, room));
+      must(await browser.click(await findElement(browser, (e) => e.tag === 'button' && e.label === '参加', '参加ボタン')));
+      await waitFor(page, visible, 'msg');
+    }
+    target = await page.evaluate(() => localStorage.getItem('p2p_room'));
+    if (target !== room) throw new Error(`開いたルームが「${target}」で、「${room}」ではありません`);
   }
-  const active = await page.evaluate(() => localStorage.getItem('p2p_room'));
-  if (active !== room) throw new Error(`開いたルームが「${active}」で、「${room}」ではありません`);
   await page.waitForTimeout(3000); // つながるのを待つ
 
   // 📝 長文の窓に件名と本文を入れる
@@ -58,17 +74,22 @@ export async function postToCp2pRoom(browser, { url = 'https://cp2p.eiwa-up.jp/'
   await waitFor(page, visible, 'longMsgInput', 10000);
   if (subject) must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgSubject', '件名の欄', 'longMsgSubject'), subject));
   must(await browser.typeText(await findElement(browser, (e) => e.domId === 'longMsgInput', '本文の欄', 'longMsgInput'), body));
+  if (attach) {
+    must(await browser.attachFile('#longMsgFileInput', attach));
+    await waitFor(page, visible, 'longMsgAttachChip', 10000);
+  }
 
   if (dryRun) {
     const shot = await browser.screenshot();
     must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgCloseBtn', '閉じるボタン', 'longMsgCloseBtn')));
-    return { sent: false, dryRun: true, room, screenshot: shot.file };
+    return { sent: false, dryRun: true, room: target, screenshot: shot.file };
   }
 
   must(await browser.click(await findElement(browser, (e) => e.domId === 'longMsgSendBtn', '送信ボタン', 'longMsgSendBtn')));
-  // 自分の投稿がルームの記録に入るのを確かめる
+  // 自分の投稿がルームの記録に入るのを確かめる（添付があると少し時間がかかる）
   const mark = (subject || body).slice(0, 20);
   await waitFor(page, ([r, m]) => (localStorage.getItem('p2p_room_history_' + r) || '').includes(m) ||
-    (document.body.innerText || '').includes(m), [room, mark], 30000);
-  return { sent: true, room };
+    (document.body.innerText || '').includes(m), [target, mark], 60000);
+  await page.waitForTimeout(attach ? 8000 : 2000);
+  return { sent: true, room: target };
 }

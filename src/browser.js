@@ -310,6 +310,17 @@ export class AIBrowser {
     }, { write: !safe });
   }
 
+  // ファイルを添付する（許可リストのページだけ・添付できるのは ai-browser の data/ の中のファイルだけ）
+  attachFile(selector, file) {
+    return this.run('attach_file', { selector, file: path.basename(file) }, async () => {
+      if (!this.writeAllowedHere().ok) return this.refuse('このページは書き込み許可リストにないので、添付はできません');
+      const real = fs.realpathSync(file);
+      if (!real.startsWith(path.join(ROOT, 'data') + path.sep)) return this.refuse('添付できるのは ai-browser の data/ の中のファイルだけです');
+      await this.page.setInputFiles(selector, real, { timeout: 10000 });
+      return { summary: `${path.basename(real)} を添付` };
+    }, { write: true });
+  }
+
   scroll(direction = 'down') {
     return this.run('scroll', { direction }, async () => {
       await this.page.mouse.wheel(0, direction === 'up' ? -800 : 800);
