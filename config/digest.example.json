@@ -1,10 +1,82 @@
 {
   "_説明": "定期チェック（npm run digest）で見るサイト。前回から増えたリンクを「新着」として、自宅の AI がまとめる。",
-  "title": "内閣府・国会・大阪府・大阪市の夕方まとめ",
+  "title": "政府（各府省庁）・国会・東京都・大阪府・大阪市の夕方まとめ",
   "sites": [
     {
       "name": "内閣府",
       "url": "https://www.cao.go.jp/"
+    },
+    {
+      "name": "首相官邸",
+      "url": "https://www.kantei.go.jp/"
+    },
+    {
+      "name": "デジタル庁",
+      "url": "https://www.digital.go.jp/"
+    },
+    {
+      "name": "復興庁",
+      "url": "https://www.reconstruction.go.jp/"
+    },
+    {
+      "name": "こども家庭庁",
+      "url": "https://www.cfa.go.jp/"
+    },
+    {
+      "name": "金融庁",
+      "url": "https://www.fsa.go.jp/"
+    },
+    {
+      "name": "消費者庁",
+      "url": "https://www.caa.go.jp/"
+    },
+    {
+      "name": "警察庁",
+      "url": "https://www.npa.go.jp/"
+    },
+    {
+      "name": "総務省",
+      "url": "https://www.soumu.go.jp/"
+    },
+    {
+      "name": "法務省",
+      "url": "https://www.moj.go.jp/"
+    },
+    {
+      "name": "外務省",
+      "url": "https://www.mofa.go.jp/mofaj/"
+    },
+    {
+      "name": "財務省",
+      "url": "https://www.mof.go.jp/"
+    },
+    {
+      "name": "文部科学省",
+      "url": "https://www.mext.go.jp/"
+    },
+    {
+      "name": "厚生労働省",
+      "url": "https://www.mhlw.go.jp/"
+    },
+    {
+      "name": "農林水産省",
+      "url": "https://www.maff.go.jp/"
+    },
+    {
+      "name": "経済産業省",
+      "url": "https://www.meti.go.jp/"
+    },
+    {
+      "name": "国土交通省",
+      "url": "https://www.mlit.go.jp/"
+    },
+    {
+      "name": "環境省",
+      "url": "https://www.env.go.jp/"
+    },
+    {
+      "name": "防衛省",
+      "url": "https://www.mod.go.jp/"
     },
     {
       "name": "衆議院",
@@ -13,6 +85,10 @@
     {
       "name": "参議院",
       "url": "https://www.sangiin.go.jp/"
+    },
+    {
+      "name": "東京都",
+      "url": "https://www.metro.tokyo.lg.jp/"
     },
     {
       "name": "大阪府",

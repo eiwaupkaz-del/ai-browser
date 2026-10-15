@@ -4,6 +4,7 @@
 //   npm run digest -- --no-post    … 投稿しない
 //   npm run digest -- --dry-run-post … 投稿は送信の直前まで（送らない）
 // 見るサイトは config/digest.json（なければ見本 config/digest.example.json）。
+// 新着のないサイトはまとめに載せない。どのサイトにも新着がなければ投稿しない（まとめの保存だけ）。
 // まとめは data/reports/digest-日付.md に保存。操作はすべてふつうの履歴にも残る。
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,6 +56,7 @@ history.write({ kind: 'session', event: 'start', message: '定期チェック', 
 
 const sections = [];
 let totalNew = 0;
+let quiet = 0; // 新着のなかったサイトの数
 try {
   for (const site of cfg.sites) {
     try {
@@ -70,10 +72,9 @@ try {
       const fresh = firstTime ? links.slice(0, 15) : links.filter((l) => !prev.includes(l.href));
       const text = (await browser.readPage({ maxChars: cfg.pageTextChars || 2500 })).text;
       state[site.url] = [...new Set([...(prev || []), ...links.map((l) => l.href)])].slice(-1000);
-      totalNew += firstTime ? 0 : fresh.length;
-      let body;
-      if (!firstTime && fresh.length === 0) body = '・前回から新しい知らせはありません';
-      else body = await summarize(site, fresh, text, firstTime);
+      totalNew += fresh.length;
+      if (fresh.length === 0) { quiet++; continue; }
+      const body = await summarize(site, fresh, text, firstTime);
       sections.push(`## ${site.name}${firstTime ? '（初回のため今の見出し）' : `（新着 ${fresh.length} 件）`}\n\n${body}\n\n<${opened.url}>`);
     } catch (e) {
       sections.push(`## ${site.name}\n\n・確認できませんでした: ${e.message}\n\n<${site.url}>`);
@@ -85,11 +86,17 @@ try {
 }
 
 const now = new Date().toLocaleTimeString('ja-JP', { timeZone: 'Asia/Tokyo', hour: '2-digit', minute: '2-digit' });
-const report = `# ${cfg.title}（${today} ${now}）\n\nまとめ: 自宅の AI（${llm.model}）。元のページを必ず確かめてください。\n\n${sections.join('\n\n')}\n`;
+const quietNote = quiet ? `（ほかの ${quiet} か所は前回から新しい知らせがありませんでした）\n\n` : '';
+const report = sections.length
+  ? `# ${cfg.title}（${today} ${now}）\n\nまとめ: 自宅の AI（${llm.model}）。元のページを必ず確かめてください。\n\n${quietNote}${sections.join('\n\n')}\n`
+  : `# ${cfg.title}（${today} ${now}）\n\n・どのサイトも前回から新しい知らせはありませんでした\n`;
 
 // まとめをどこかへ投稿する（config の post。いまは CP2P のルームだけ）
 let posted = '';
-if (cfg.post && cfg.post.type === 'cp2p' && !process.argv.includes('--no-post')) {
+if (totalNew === 0) {
+  posted = '新着がないので投稿しませんでした';
+  history.write({ kind: 'note', message: posted });
+} else if (cfg.post && cfg.post.type === 'cp2p' && !process.argv.includes('--no-post')) {
   const poster = new AIBrowser({ policy: new Policy(), history, profile: cfg.post.profile || 'cp2p' });
   try {
     const r = await postToCp2pRoom(poster, {

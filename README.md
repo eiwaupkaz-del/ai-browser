@@ -78,7 +78,7 @@ npm run ollama -- "○○市のお知らせのページを開いて、今週の�
 
 ### 定期チェック（決まった時刻に見てまとめる）
 
-`config/digest.json`（なければ見本 `config/digest.example.json`）に書いたサイトを順に開きます。前回から増えたリンクを「新着」として、自宅の AI がまとめます。まとめは `data/reports/digest-日付.md` に保存され、Mac の通知も出ます。
+`config/digest.json`（なければ見本 `config/digest.example.json`）に書いたサイトを順に開きます。前回から増えたリンクを「新着」として、自宅の AI がまとめます。新着のないサイトは載せず、どこにも新着がなければ投稿しません。まとめは `data/reports/digest-日付.md` に保存され、Mac の通知も出ます。
 
 ```bash
 npm run digest
