@@ -67,6 +67,8 @@ try {
       const links = elements.filter((e) => e.tag === 'a' && /^https?:/.test(e.href || '') && e.label.length >= (cfg.minLinkText || 12))
         .filter((e) => { const k = e.href.split('#')[0]; if (seen.has(k)) return false; seen.add(k); return true; })
         .map(({ label, href }) => ({ label, href: href.split('#')[0] }));
+      // 断りの画面などでリンクが 1 つも取れないときは「新着なし」ではなく失敗として載せる
+      if (links.length === 0) throw new Error(`ページを読めませんでした（${opened.title || '中身なし'}）`);
       const prev = state[site.url];
       const firstTime = !prev;
       const fresh = firstTime ? links.slice(0, 15) : links.filter((l) => !prev.includes(l.href));
