@@ -87,7 +87,7 @@ export async function readCp2pRoom(browser, { url, room, hours = 24, limit = 30,
     .map((m) => ({
       at: new Date(toMs(m)).toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
       name: String(m.name || '?').slice(0, 60),
-      private: m.delivery && m.delivery !== 'public' ? String(m.delivery) : undefined,
+      private: m.delivery === 'private' ? '🔒非公開' : m.delivery === 'dm' ? 'DM' : undefined, // acked・sent などは届き具合の印なので出さない
       text: String(m.longBody || m.msg || '').slice(0, 4000),
     }));
   browser.history.write({ kind: 'note', message: 'CP2P のルームを読んだ', room: target, hours, count: msgs.length });
