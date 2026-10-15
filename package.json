@@ -14,7 +14,8 @@
     "login": "node bin/login.js",
     "test": "node --test --test-concurrency=1 test/*.test.js",
     "digest": "node bin/digest.js",
-    "usage": "node bin/usage.js"
+    "usage": "node bin/usage.js",
+    "cp2p": "node bin/cp2p.js"
   },
   "engines": {
     "node": ">=20"

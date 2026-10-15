@@ -1,0 +1,7 @@
+{
+  "_説明": "CP2P のルームを読む・書く（npm run cp2p と MCP の cp2p_read / cp2p_post）。使えるのは rooms のルームだけ。参加キーは人が npm run login で一度入って CP2P に保存しておく（AI は入れない）。",
+  "url": "https://cp2p.eiwa-up.jp/",
+  "profile": "cp2p",
+  "rooms": ["ai", "ありがとうOC"],
+  "postMinIntervalMin": 10
+}
